@@ -1,7 +1,6 @@
 import sys
 import data
 import random
-import numpy as np
 import statistics
 
 SUMMER, FALL, WINTER, SPRING = 1,2,3,0
