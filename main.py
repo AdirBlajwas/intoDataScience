@@ -1,7 +1,10 @@
 import sys
 import data
-import random
 import statistics
+import pandas as pd
+import matplotlib.pyplot as plt
+# pandas and matplotlib are used only(!) in the dry_part function
+
 
 SUMMER, FALL, WINTER, SPRING = 1,2,3,0
 HOLIDAY, WEEKDAY = 1,0
@@ -15,7 +18,10 @@ SEASONS_VAL = [range(4)]
 
 
 def question1(main_data, statistic_functions):
+    """For all of the days, summer days and holidays separately, the function
+    prints the mean and std of several features, and the covariance of t1 and cnt"""
     print("Question 1:")
+    # a dictionary used to iterate the summer,holiday and all of the days for printing
     loc_dict = {'Summer' : [SEASON,SUMMER], 'Holiday' : [IS_HOLIDAY, HOLIDAY], 'All': SEASONS_VAL}
     for key in loc_dict.keys():
         print(f"{key}:")
@@ -26,37 +32,48 @@ def question1(main_data, statistic_functions):
         data.print_joint_details(data_filtered, (T1, CNT), [statistic_functions[2]], [COV])
 
 def question2(main_data, statistic_functions):
+    """For the winter days, the function calculates the mean and std of cnt for holidays and weekdays , separatly
+    for days with temperature above 13.0 deg and below/equal"""
+    # Filtering only th winter days
+    winter_data, other_data = data.filter_by_feature(main_data,SEASON,[WINTER])
     print("\nQuestion 2:")
+    #A dictionary used to iterate the different threshold limits, the holidays, for each calculation and print.
     local_dict  = {'thres_signs' : ["<=", ">"],'is_above_vals': [True, False], IS_HOLIDAY : ['holiday','weekday'],
                    'feature_descriptions' : [f"Winter {word} records:" for word in ['holiday', 'weekday']],
-                   'data': list(data.filter_by_feature(main_data,IS_HOLIDAY,[HOLIDAY]))}
+                   'data': list(data.filter_by_feature(winter_data,IS_HOLIDAY,[HOLIDAY]))}
     thres_val = 13.0
     for i,thres_sign in enumerate(local_dict['thres_signs']) :
         print(f"if {T1}{thres_sign}{round(thres_val,1)} then:")
         for cur_data, description in zip(local_dict['data'],local_dict['feature_descriptions']):
-            statistics.population_statistics(description, cur_data, T1, CNT, thres_val, i==0,
+            statistics.population_statistics(description, cur_data, T1, CNT, thres_val, i==1,
                                              statistic_functions[0:2])
 
 
 
-
+def dry_part(main_data):
+    """The function creates a graph for the avg cnt according to days with the same temperature"""
+    winter_data,other_data = data.filter_by_feature(main_data,SEASON,[WINTER])
+    holiday_data, weekday_data = data.filter_by_feature(winter_data,IS_HOLIDAY,[HOLIDAY])
+    df_index = [f'day_{i + 1}' for i in range(len(weekday_data[SEASON]))]
+    df = pd.DataFrame(weekday_data, index=df_index)
+    new_df = df.groupby('t1').mean().sort_values('t1')['cnt']
+    cnt_lst = new_df.tolist()
+    t1_lst = new_df.index.tolist()
+    print(cnt_lst)
+    print(t1_lst)
+    plt.plot(t1_lst, cnt_lst)
+    plt.xlabel('t1')
+    plt.ylabel('cnt avg')
+    plt.title('winter weekday cnt by t1')
+    plt.show()
 
 
 def main(argv):
     main_data = data.load_data(argv[1],argv[0])
-    random.seed(42)
     statistic_functions = [statistics.calc_mean, statistics.calc_stdv,statistics.calc_covariance]
-    # main_data = {
-    #     'season': [np.random.randint(0, 4) for i in range(10)],
-    #     't1': [np.random.randint(0, 35) for i in range(10)],
-    #     'cnt': [np.random.randint(0, 100) for i in range(10)],
-    #     'is_holiday': [np.random.randint(0, 2) for i in range(10)],
-    #     'hum': [100 * np.random.random() for i in range(10)],
-    # }
-    # print(main_data['is_holiday'])
     question1(main_data,statistic_functions)
     question2(main_data,statistic_functions)
-    # statistics.population_statistics('hi it\'s what:', main_data,'t1','cnt',13.0, False, statistic_functions[0:2])
+    #dry_part(main_data)
 
 
 # Press the green button in the gutter to run the script.
